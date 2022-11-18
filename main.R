@@ -75,3 +75,59 @@ r1RobustIncludeRegional = feols( realGrowthIncome ~ d | state + s^year + mw^year
                                  vcov = "hetero" )
 
 etable( r1ClusteredExcludeRegional, r1RobustExcludeRegional,  r1ClusteredIncludeRegional, r1RobustIncludeRegional )
+
+r1ClusteredExclude99 = feols( realGrowthIncome ~ d | state + year,
+                            data = df %>% filter(year >= 1972 & year <= 1999,
+                                                 state != "Delaware",
+                                                 year != ma),
+                            vcov = cluster ~ state + year )
+
+r1ClusteredInclude99 = feols( realGrowthIncome ~ d | state + year,
+                            data = df %>% filter(year >= 1972 & year <= 1999,
+                                                 state != "Delaware"),
+                            vcov = cluster ~ state + year )
+
+r1ClusteredExcludeRegional99 = feols( realGrowthIncome ~ d | state + s^year + mw^year + w^year + ne^year,
+                                    data = df %>% filter(year >= 1972 & year <= 1999,
+                                                         state != "Delaware",
+                                                         year != ma,
+                                                         state != "Alaska",
+                                                         state != "Hawaii"),
+                                    vcov = cluster ~ state + year )
+
+r1ClusteredIncludeRegional = feols( realGrowthIncome ~ d | state + s^year + mw^year + w^year + ne^year,
+                                    data = df %>% filter(year >= 1972 & year <= 1999,
+                                                         state != "Delaware",
+                                                         state != "Alaska",
+                                                         state != "Hawaii"),
+                                    vcov = cluster ~ state + year )
+
+etable( r1ClusteredExclude99, r1ClusteredInclude99,  r1ClusteredExcludeRegional99, r1ClusteredIncludeRegional )
+
+
+######## event studies
+df_event = df %>%
+  filter(year >= 1972 & year <= 1992,
+         state != "Delaware",
+         year != ma )%>%
+  mutate( firstTreat = ifelse( ma>1992, 0, ma ),
+         stateId = as.numeric( as.factor( state ) ) )
+
+attgt = att_gt(
+  yname = "realGrowthIncome",
+  tname = "year",
+  idname = "stateId",
+  gname = "firstTreat",
+  data = df_event,
+  cluster = "state"
+)
+
+es = aggte(
+  attgt,
+  type = "dynamic", # For event study
+  min_e = -4, max_e = +6,
+  bstrap = TRUE,
+  clustervars = "state"
+)
+
+ggdid(es)
