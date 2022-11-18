@@ -9,37 +9,69 @@ library(estimatr)
 library(data.table) 
 library(readxl)
 
+############### data cleaning ###############
 dataTable = as.data.table( fread( "/Users/maxime/Documents/Université/HEC/PhD/6.1/FE I/HW4/JS_data.csv" ) )
 
 df = dataTable %>%
-  filter( year >= 1971 & year <= 1992,
-          state != "Delaware" ) %>%
   group_by( state ) %>%
   mutate( realIncome = pi_percap / cpi, 
-          realGrowthIncome = 100 * realIncome / lag( realIncome )  ) %>%
+          realGrowthIncome = 100 * realIncome / lag( realIncome ) ) %>%
   na.omit() %>%
   ungroup()
 
-dfNoDeregulatedYear = df %>%
-  filter( year != ma )
-
-m1ClusteredExclude = feols( realGrowthIncome ~ d | state + year,
-          data = dfNoDeregulatedYear,
+############### regressions ###############
+r1ClusteredExclude = feols( realGrowthIncome ~ d | state + year,
+          data = df %>% filter(year >= 1972 & year <= 1992,
+                                                state != "Delaware",
+                                                year != ma),
           vcov = cluster ~ state + year )
 
-m1RobustExclude = feols( realGrowthIncome ~ d | state + year,
-            data = dfNoDeregulatedYear,
+r1RobustExclude = feols( realGrowthIncome ~ d | state + year,
+            data = df %>% filter(year >= 1972 & year <= 1992,
+                                 state != "Delaware",
+                                 year != ma),
             vcov = "hetero" )
 
-m1ClusteredInclude = feols( realGrowthIncome ~ d | state + year,
-                     data = df,
+r1ClusteredInclude = feols( realGrowthIncome ~ d | state + year,
+                     data = df %>% filter(year >= 1972 & year <= 1992,
+                                          state != "Delaware"),
                      vcov = cluster ~ state + year )
 
-m1RobustInclude = feols( realGrowthIncome ~ d | state + year,
-                  data = df,
+r1RobustInclude = feols( realGrowthIncome ~ d | state + year,
+                  data = df %>% filter(year >= 1972 & year <= 1992,
+                                       state != "Delaware"),
                   vcov = "hetero" )
 
-etable( m1ClusteredExclude, m1RobustExclude, m1ClusteredInclude, m1RobustInclude )
+etable( r1ClusteredExclude, r1RobustExclude, r1ClusteredInclude, r1RobustInclude )
 
+r1ClusteredExcludeRegional = feols( realGrowthIncome ~ d | state + s^year + mw^year + w^year + ne^year,
+                            data = df %>% filter(year >= 1972 & year <= 1992,
+                                                 state != "Delaware",
+                                                 year != ma,
+                                                 state != "Alaska",
+                                                 state != "Hawaii"),
+                            vcov = cluster ~ state + year )
 
+r1RobustExcludeRegional = feols( realGrowthIncome ~ d | state + s^year + mw^year + w^year + ne^year,
+                                    data = df %>% filter(year >= 1972 & year <= 1992,
+                                                         state != "Delaware",
+                                                         year != ma,
+                                                         state != "Alaska",
+                                                         state != "Hawaii"),
+                                    vcov = "hetero" )
 
+r1ClusteredIncludeRegional = feols( realGrowthIncome ~ d | state + s^year + mw^year + w^year + ne^year,
+                                    data = df %>% filter(year >= 1972 & year <= 1992,
+                                                         state != "Delaware",
+                                                         state != "Alaska",
+                                                         state != "Hawaii"),
+                                    vcov = cluster ~ state + year )
+
+r1RobustIncludeRegional = feols( realGrowthIncome ~ d | state + s^year + mw^year + w^year + ne^year,
+                                 data = df %>% filter(year >= 1972 & year <= 1992,
+                                                      state != "Delaware",
+                                                      state != "Alaska",
+                                                      state != "Hawaii"),
+                                 vcov = "hetero" )
+
+etable( r1ClusteredExcludeRegional, r1RobustExcludeRegional,  r1ClusteredIncludeRegional, r1RobustIncludeRegional )
