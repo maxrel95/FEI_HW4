@@ -8,6 +8,8 @@ library(fixest)
 library(estimatr)
 library(data.table) 
 library(readxl)
+library(bacondecomp)
+
 
 ############### data cleaning ###############
 dataTable = as.data.table( fread( "/Users/maxime/Documents/Université/HEC/PhD/6.1/FE I/HW4/JS_data.csv" ) )
@@ -105,29 +107,45 @@ r1ClusteredIncludeRegional = feols( realGrowthIncome ~ d | state + s^year + mw^y
 etable( r1ClusteredExclude99, r1ClusteredInclude99,  r1ClusteredExcludeRegional99, r1ClusteredIncludeRegional )
 
 
-######## event studies
+############### event study ###############
 df_event = df %>%
-  filter(year >= 1972 & year <= 1992,
-         state != "Delaware",
-         year != ma )%>%
-  mutate( firstTreat = ifelse( ma>1992, 0, ma ),
-         stateId = as.numeric( as.factor( state ) ) )
+  filter( year >= 1972 & year <= 1992,
+          state != "Delaware") %>%
+  mutate( firstTreatment = ifelse( ma < 1972 ,0, ma ),
+          stateId = as.numeric(as.factor( state )))
 
 attgt = att_gt(
   yname = "realGrowthIncome",
   tname = "year",
   idname = "stateId",
-  gname = "firstTreat",
+  gname = "firstTreatment",
   data = df_event,
-  cluster = "state"
+  cluster = "state",
+  control_group = "notyettreated",
+  allow_unbalanced_panel = TRUE
 )
 
-es = aggte(
-  attgt,
+
+es = aggte(attgt,
   type = "dynamic", # For event study
-  min_e = -4, max_e = +6,
+  min_e = -20, max_e = +20,
   bstrap = TRUE,
-  clustervars = "state"
+  clustervars = "state",
+  na.rm = TRUE
 )
 
 ggdid(es)
+
+
+mod_twfe = feols(realGrowthIncome ~ i(firstTreatment, d, ref = -1) + ## Our key interaction: time × treatment status
+                   pcinc + asmrh + cases |                    ## Other controls
+                   stfips + year,                             ## FEs
+                 cluster = ~stfips,                          ## Clustered SEs
+                 data = dat)
+
+############### bacon ###############
+df_bacon = bacon(
+  realGrowthIncome ~ d,
+  data = 
+  
+)
