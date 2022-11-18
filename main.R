@@ -112,7 +112,10 @@ df_event = df %>%
   filter( year >= 1972 & year <= 1992,
           state != "Delaware") %>%
   mutate( firstTreatment = ifelse( ma < 1972 ,0, ma ),
-          stateId = as.numeric(as.factor( state )))
+          stateId = as.numeric(as.factor( state )),
+          treat = ifelse(ma>1992 | ma<1972, 0, 1),
+          time_to_treat = ifelse(treat==1, year - firstTreatment, 0),
+          year_treated := ifelse(treat==0, 10000, ma))
 
 attgt = att_gt(
   yname = "realGrowthIncome",
@@ -136,12 +139,24 @@ es = aggte(attgt,
 
 ggdid(es)
 
+mod_twfe = feols(realGrowthIncome ~ i(time_to_treat, treat, ref = -1) | ## Our key interaction: time × treatment status|                    ## Other controls
+                 state + year,                             ## FEs
+                 vcov = cluster ~ state + year,                         ## Clustered SEs
+                 data = df_event)
+iplot(mod_twfe, 
+      xlab = 'Time to treatment',
+      main = 'Event study: Staggered treatment (TWFE)')
 
-mod_twfe = feols(realGrowthIncome ~ i(firstTreatment, d, ref = -1) + ## Our key interaction: time × treatment status
-                   pcinc + asmrh + cases |                    ## Other controls
-                   stfips + year,                             ## FEs
-                 cluster = ~stfips,                          ## Clustered SEs
-                 data = dat)
+mod_sa = feols(realGrowthIncome ~ sunab(year_treated, year) |
+               state + year,                             ## FEs
+               vcov = cluster ~ state + year,                         ## Clustered SEs
+               data = df_event)
+
+iplot(list(mod_twfe, mod_sa), sep = 0.5, ref.line = -1,
+      xlab = 'Time to treatment',
+      main = 'Event study: Staggered treatment')
+legend("bottomleft", col = c(1, 2), pch = c(20, 17), 
+       legend = c("TWFE", "Sun & Abraham (2020)"), cex=0.5)
 
 ############### bacon ###############
 df_bacon = bacon(
