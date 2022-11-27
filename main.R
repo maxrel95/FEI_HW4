@@ -46,24 +46,24 @@ etable( r1ClusteredExclude, r1RobustExclude, r1ClusteredInclude, r1RobustInclude
 r1ClusteredExcludeRegional = feols( realGrowthIncome ~ d | state + s^year + mw^year + w^year + ne^year, # add regional time
                                     #FE by interacting region and time
                             data = df %>% filter(year >= 1972 & year <= 1992,
-                                                 state != list( "Delaware", "Alaska", "Hawaii"), # remove  delaware alaska and hawai
+                                                 state != "Delaware" & state != "Alaska" & state != "Hawaii", # remove  delaware alaska and hawai
                                                  year != ma), # remove obs at deregulation date
                             vcov = cluster ~ state + year ) # clustered s.e.
 
 r1RobustExcludeRegional = feols( realGrowthIncome ~ d | state + s^year + mw^year + w^year + ne^year,
                                     data = df %>% filter(year >= 1972 & year <= 1992,
-                                                         state != list( "Delaware", "Alaska", "Hawaii"),
+                                                         state != "Delaware" & state != "Alaska" & state != "Hawaii",
                                                          year != ma),
                                     vcov = "hetero" ) # robuste s.e
 
 r1ClusteredIncludeRegional = feols( realGrowthIncome ~ d | state + s^year + mw^year + w^year + ne^year,
                                     data = df %>% filter(year >= 1972 & year <= 1992,
-                                                         state != list( "Delaware", "Alaska", "Hawaii")),
+                                                         state != "Delaware" & state != "Alaska" & state != "Hawaii"),
                                     vcov = cluster ~ state + year ) # removed the restriction on deregulation date keep clustered se
 
 r1RobustIncludeRegional = feols( realGrowthIncome ~ d | state + s^year + mw^year + w^year + ne^year,
                                  data = df %>% filter(year >= 1972 & year <= 1992,
-                                                      state != list( "Delaware", "Alaska", "Hawaii")),
+                                                      state != "Delaware" & state != "Alaska" & state != "Hawaii"),
                                  vcov = "hetero" ) # removed the restriction on deregulation date keep robust se
 
 etable( r1ClusteredExcludeRegional, r1RobustExcludeRegional,  r1ClusteredIncludeRegional, r1RobustIncludeRegional,
@@ -77,7 +77,7 @@ r1ClusteredExclude99 = feols( realGrowthIncome ~ d | state + year,
 
 r1ClusteredExcludeRegional99 = feols( realGrowthIncome ~ d | state + s^year + mw^year + w^year + ne^year,
                                     data = df %>% filter(year >= 1972 & year <= 1999, # increase window of study
-                                                         state != list( "Delaware", "Alaska", "Hawaii"), # removed two additional states
+                                                         state != "Delaware" & state != "Alaska" & state != "Hawaii", # removed two additional states
                                                          year != ma),
                                     vcov = cluster ~ state + year )
 
