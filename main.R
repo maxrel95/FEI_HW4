@@ -81,11 +81,23 @@ r1ClusteredExcludeRegional99 = feols( realGrowthIncome ~ d | state + s^year + mw
                                                          year != ma),
                                     vcov = cluster ~ state + year )
 
+
+r1ClusteredInclude99 = feols( realGrowthIncome ~ d | state + year,
+                              data = df %>% filter(year >= 1972 & year <= 1999, # increase window of study, i.e until 1999
+                                                   state != "Delaware"),
+                              vcov = cluster ~ state + year )
+
+r1ClusteredIncludeRegional99 = feols( realGrowthIncome ~ d | state + s^year + mw^year + w^year + ne^year,
+                                      data = df %>% filter(year >= 1972 & year <= 1999, # increase window of study
+                                                           state != "Delaware" & state != "Alaska" & state != "Hawaii"),
+                                      vcov = cluster ~ state + year )
+
+
 etable( r1ClusteredExclude99,  r1ClusteredExcludeRegional99,
         file = "Results/eq1n2Extend.tex")
 
-etable(r1RobustExclude,  r1RobustInclude, r1ClusteredExclude, r1ClusteredExclude99, r1RobustExcludeRegional,
-       r1RobustIncludeRegional, r1ClusteredExcludeRegional, r1ClusteredExcludeRegional99,
+etable(r1RobustExclude,  r1RobustInclude, r1ClusteredExclude, r1ClusteredExclude99, r1ClusteredInclude99, r1RobustExcludeRegional,
+       r1RobustIncludeRegional, r1ClusteredExcludeRegional, r1ClusteredExcludeRegional99, r1ClusteredIncludeRegional99,
        file = "Results/eqResults.tex", digits = 2, se.row = TRUE) 
 
 ############### event study ###############
