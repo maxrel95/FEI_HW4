@@ -221,8 +221,15 @@ esTreated = aggte(attgtTreated,
            clustervars = "state",
            na.rm = TRUE
 )
+esTreated2 = aggte(attgtTreated,
+                  type = "simple", # For event study
+                  bstrap = TRUE,
+                  clustervars = "state",
+                  na.rm = TRUE
+)
+summary(esTreated2)
 
-ggdid(esTreated, title = "Early as Treated", xgap = 5)
+ggdid(esTreated, title = "Not yet treated", xgap = 5)
 ggsave( filename = "Results/ESCallawayTreated.png", dpi = 300 )
 
 # redo but consider the states treated before 1972 as untreated
